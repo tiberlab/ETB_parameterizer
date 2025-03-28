@@ -1,0 +1,14 @@
+'/idra/alphan/parameterize/with_Chris/profiles/GaN_zb_unstrained_0K_noSOC/select2/'
+tb.upg
+F
+T
+1.d0 0.d0 0.d0
+LK
+0
+8
+-50d0
+-50d0
+kpoints.csv
+0 0 0 
+T
+3

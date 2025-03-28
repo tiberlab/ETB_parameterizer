@@ -1,0 +1,9 @@
+#Multi-Objective Genetic Algorithm
+#Generation, Min Bands Cost, Min Coef2 Cost
+1, 0.186410, 0.194454
+2, 0.186410, 0.194454
+
+#Exit flag:  0
+#Min Bands Cost:  1.864097e-01
+#Min Coef2 Cost:  1.944544e-01
+#Run time (hours):  0.099465
