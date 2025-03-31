@@ -27,7 +27,8 @@ if true
     profile(1).gauss = [10, 10; 1, 1]; % [amplitude_vb, amplitude_cb; width_vb, width_cb] for Gaussian band-weighting function (in eV)
     profile(1).bands_weight = [1, 10, 20, 20, 20, 2, 2, 2]; %weights for bands, length must be equal to that of `band_list`
     profile(1).coef2_weight = [1, 2, 3, 4, 5, 0, 0, 0]; %weights for coef^2, length must be equal to that of `band_list`
-    profile(1).k_weight = [10, ones(1,19), 10, ones(1,24), 20, ones(1,28), 10, ones(1,9), 10, 1, ones(1,30)]; %weights for k-points
+    profile(1).bands_kweight = [10, ones(1,19), 10, ones(1,24), 20, ones(1,28), 10, ones(1,9), 10, 1, ones(1,30)]; %weights for k-points in fitting bands, must have the same length as `klist`
+    profile(1).coef2_kweight = [10, ones(1,19), 10, ones(1,24), 20, ones(1,28), 10, ones(1,9), 10, 1, ones(1,30)]; %weights for k-points in fitting coef2, must have the same length as `klist`
     profile(1).priority = 1;
     %profile(1).dft_bands = 'bands.csv'; %filename containing DFT bands
     %profile(1).vb_edge = 4; %in target file, the first `vb_edge` bands are valence: integer
@@ -209,8 +210,11 @@ for p = 1:n_profile
     elseif length(profile(p).dft_band_list) ~= length(profile(p).coef2_weight)
         disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `coef2_weight` and `band_list` must have the same length."));
         return;
-    elseif length(profile(p).klist) ~= length(profile(p).k_weight)
-        disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `k_weight` and `klist` must have the same length."));
+    elseif length(profile(p).klist) ~= length(profile(p).bands_kweight)
+        disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `bands_kweight` and `klist` must have the same length."));
+        return;
+    elseif length(profile(p).klist) ~= length(profile(p).coef2_kweight)
+        disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `coef2_kweight` and `klist` must have the same length."));
         return;
     end
     %profile(p).n_band = profile(p).n_vband + profile(p).n_cband; %total number of considered bands
@@ -237,8 +241,8 @@ for p = 1:n_profile
     %end
     for k = 1:length(profile(p).klist)
         idx = [k:n_k_fit:(n_k_fit*(n_band_fit-1)+k)];
-        profile(p).weight.bands(idx, 1) = profile(p).weight.bands(idx, 1) * profile(p).k_weight(k);
-        profile(p).weight.coef2(idx, 1) = profile(p).weight.coef2(idx, 1) * profile(p).k_weight(k);
+        profile(p).weight.bands(idx, 1) = profile(p).weight.bands(idx, 1) * profile(p).bands_kweight(k);
+        profile(p).weight.coef2(idx, 1) = profile(p).weight.coef2(idx, 1) * profile(p).coef2_kweight(k);
     end
 
     if weighting_method == 0
