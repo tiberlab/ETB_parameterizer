@@ -11,7 +11,7 @@ end
 %give info for each profile included in the fitting
 if true
     % k-path: W1-(20)-L21-(25)-G46-(29)-X75-(10)-U85-(1)-K86-(31)-G117
-    profile(1).dir = '../profiles/GaN_zb_unstrained_0K_noSOC/'; %path to profile folder's location from this file's location
+    profile(1).dir = '../profiles/GaN_zb_unstrained_300K_noSOC/'; %path to profile folder's location from this file's location
     profile(1).dft_file = 'dft.csv'; %filename containing DFT data
     profile(1).etb_data = ["GaN"]; %list of all .etb file needed for ETB calculation
     profile(1).dft_nkpoint = 117; %number of kpoints in DFT data
@@ -22,13 +22,12 @@ if true
     profile(1).etb_top_vb = 4; %index of the top valence band in the etb.csv
     %profile(1).coef2_list = [1:5]; %indices of bands in DFT data taken into fitting coef^2
     %profile(1).klist = [1:5:21, 26:5:46, 50:5:75, 80:5:85, 90:5:117]; %index of kpoints in DFT data taken into fitting
-    profile(1).klist = [1:116];
-    %profile(1).ene_window = [-5, 8]; %energy window for fitting (in eV), with respect to the DFT VBE
-    profile(1).gauss = [10, 10; 1, 1]; % [amplitude_vb, amplitude_cb; width_vb, width_cb] for Gaussian band-weighting function (in eV)
-    profile(1).bands_weight = [1, 10, 20, 20, 20, 2, 2, 2]; %weights for bands, length must be equal to that of `band_list`
-    profile(1).coef2_weight = [1, 2, 3, 4, 5, 0, 0, 0]; %weights for coef^2, length must be equal to that of `band_list`
-    profile(1).bands_kweight = [10, ones(1,19), 10, ones(1,24), 20, ones(1,28), 10, ones(1,9), 10, 1, ones(1,30)]; %weights for k-points in fitting bands, must have the same length as `klist`
-    profile(1).coef2_kweight = [10, ones(1,19), 10, ones(1,24), 20, ones(1,28), 10, ones(1,9), 10, 1, ones(1,30)]; %weights for k-points in fitting coef2, must have the same length as `klist`
+    profile(1).klist = [1:5:46, 50:5:85, 89:6:113];
+    profile(1).gauss = [5, 4]; % [gaussian-sigma_vb, sigma_cb] for Gaussian band-weighting function (in eV)
+    profile(1).bands_bweight = [10, 3, 3, 3, 3, 3, 4, 4]; %factor weights for bands_cost in terms of band index, length must be equal to that of `dft_band_list`
+    profile(1).coef2_bweight = [10, 3, 3, 3, 2, 2, 0, 0]; %factor weights for coef2_cost in terms of band index, length must be equal to that of `dft_band_list`
+    profile(1).bands_kweight = [10, 2, 5, 2, 10, 3, 2, 2, 5, 30, 5, 2, 5, 2, 2, 10, 2, 10, 2, 5, 2, 2, 3]; %weights for bands_cost in terms of k-index, must have the same length as `klist`
+    profile(1).coef2_kweight = [10, 2, 5, 2, 10, 3, 2, 2, 5, 30, 5, 2, 5, 2, 2, 10, 2, 10, 2, 5, 2, 2, 3]; %weights for coef2_cost in terms of k-index, must have the same length as `klist`
     profile(1).priority = 1;
     %profile(1).dft_bands = 'bands.csv'; %filename containing DFT bands
     %profile(1).vb_edge = 4; %in target file, the first `vb_edge` bands are valence: integer
@@ -58,16 +57,16 @@ parallel = true; %run in parallel or not (note: 'SA' does not support parallel m
 %band_priority = 100.0; %real number, = 1 to treat all bands equally, >1 to pay more attention to focused bands (usually those near the gap)
 %display = 'off'; %how matlab will print the progress to the terminal: 'iter', 'final' (default), 'off'
 %guessed_point = transpose(importdata('selected+4.csv')); %bound for fitting range from the previous hydrostatic profile
-weighting_method = 2; %0: uniform weight; 1: use band indices; 2: Gaussian of energy
-bands_bound = 0.2; % cutoff for band cost
-coef2_bound = 0.195; % cutoff for coef2 cost
-mode = 0; % 0: start from scratch; 1: continue 
+%weighting_method = 2; %0: uniform weight; 1: use band indices; 2: Gaussian of energy
+bands_bound = 0.141; % cutoff for band cost
+coef2_bound = 0.09; % cutoff for coef2 cost
+mode = 1; % 0: start from scratch; 1: continue 
 
 if mode == 0
-    if isfile('../aux/estimated-point_stage1.csv')
-        guessed_point = importdata('../aux/estimated-point_stage1.csv');
+    if isfile('../aux/GaN_estimated.csv')
+        guessed_point = importdata('../aux/GaN_estimated.csv');
     else
-        disp("ERROR: Cannot find file `../aux/estimated-point_stage1.csv`");
+        disp("ERROR: Cannot find file `../aux/GaN_estimated.csv`");
         return;
     end
 elseif mode == 1
@@ -84,8 +83,8 @@ end
 %set options for the chose algorithm. See the Matlab documentation for the lists of these options.
 %If not specififed, the options will be set to default.
 options = optimoptions('gamultiobj', ...
-    'PopulationSize', 3, ...  % Population size, 200
-    'MaxGenerations', 3, ...  % Maximum number of generations, 200*n_etb_para, %'CrossoverFraction', 0.8, ...  % Fraction of population to replace in each generation, 0.8, %'EliteCount', 1, ...  % Number of elite individuals to keep for next generation, 5% of PopularSize
+    'PopulationSize', 200, ...  % Population size, 200
+    'MaxGenerations', Inf, ...  % Maximum number of generations, 200*n_etb_para, %'CrossoverFraction', 0.8, ...  % Fraction of population to replace in each generation, 0.8, %'EliteCount', 1, ...  % Number of elite individuals to keep for next generation, 5% of PopularSize
     'FunctionTolerance', 1e-5, ...  % Termination tolerance on the function value, 1e-4
     'OutputFcn', @outfunmoga, ... % Write out log after each iteration, %'PlotFcn', @gaplotbestf, ...  % Plot function to display the best fitness value in each generation
     'UseParallel', parallel, ... %'HybridFcn', hybrid, ...
@@ -104,7 +103,7 @@ para_name = [...
     "E_sa_";... % representative for E_sa + 4*I_sa*exp() + 4*O*exp() + offset
     "E_pa_";... % representative for E_pa + 4*I_pa*exp() + 4*O*exp() + offset
     "E_ea_";... % representative for E_ea + 4*I_ea*exp() + 4*O*exp() + offset
-    %"E_da_";... % representative for E_da + 4*I_da*exp() + 4*O*exp() + offset
+    "E_da_";... % representative for E_da + 4*I_da*exp() + 4*O*exp() + offset
     "V_sss_";...
     "V_sps_";...
     "V_ses_";...
@@ -117,15 +116,15 @@ para_name = [...
     "V_eps_";...
     "V_ees_";...
     "V_eds_";...
-    %"V_dss_";...
-    %"V_dps_";...
-    %"V_des_";...
-    %"V_dds_";...
+    "V_dss_";...
+    "V_dps_";...
+    "V_des_";...
+    "V_dds_";...
     "V_ppp_";...
     "V_pdp_";...
-    %"V_dpp_";...
-    %"V_ddp_";...
-    %"V_ddd_";...
+    "V_dpp_";...
+    "V_ddp_";...
+    "V_ddd_";...
     %"I_sc_a_";...
     %"I_pc_a_";...
     %"I_ec_a_";...
@@ -143,12 +142,12 @@ para_bound = [...
     %[   0.0000,   0.0100];... %Delta_a + 4*Delta_correction_a_c
     %[  0.0000,   0.0000];... %E_sc + 4*I_sc*exp() + 4*O*exp() + offset = 0.0000
     [   5.0000,  15.0000];... %E_pc + 4*I_pc*exp() + 4*O*exp() + offset
-    [  25.0000,  35.0000];... %E_ec + 4*I_ec*exp() + 4*O*exp() + offset
-    [   7.0000,  27.0000];... %E_dc + 4*I_dc*exp() + 4*O*exp() + offset
+    [  21.0000,  31.0000];... %E_ec + 4*I_ec*exp() + 4*O*exp() + offset
+    [  12.0000,  22.0000];... %E_dc + 4*I_dc*exp() + 4*O*exp() + offset
     [ -16.0000,  -6.0000];... %E_sa + 4*I_sa*exp() + 4*O*exp() + offset
-    [  -1.0000,   9.0000];... %E_pa + 4*I_pa*exp() + 4*O*exp() + offset
-    [  15.0000,  35.0000];... %E_ea + 4*I_ea*exp() + 4*O*exp() + offset
-    %[   7.0000,  27.0000];... %E_da + 4*I_da*exp() + 4*O*exp() + offset
+    [  -5.0000,   5.0000];... %E_pa + 4*I_pa*exp() + 4*O*exp() + offset
+    [  19.0000,  29.0000];... %E_ea + 4*I_ea*exp() + 4*O*exp() + offset
+    [  12.0000,  22.0000];... %E_da + 4*I_da*exp() + 4*O*exp() + offset
     [ -10.0000,   0.0000];... %V_sss
     [   0.0000,  10.0000];... %V_sps
     [ -10.0000,   0.0000];... %V_ss*s
@@ -161,15 +160,15 @@ para_bound = [...
     [   0.0000,  10.0000];... %V_s*ps
     [ -10.0000,   0.0000];... %V_s*s*s
     [ -10.0000,   0.0000];... %V_s*ds
-    %[ -10.0000,   0.0000];... %V_dss
-    %[ -10.0000,   0.0000];... %V_dps
-    %[ -10.0000,   0.0000];... %V_ds*s
-    %[ -10.0000,   0.0000];... %V_dds
+    [ -10.0000,   0.0000];... %V_dss
+    [ -10.0000,   0.0000];... %V_dps
+    [ -10.0000,   0.0000];... %V_ds*s
+    [ -10.0000,   0.0000];... %V_dds
     [ -10.0000,   0.0000];... %V_ppp
     [   0.0000,  10.0000];... %V_pdp
-    %[   0.0000,  10.0000];... %V_dpp
-    %[   0.0000,  10.0000];... %V_ddp
-    %[ -10.0000,   0.0000];... %V_ddd
+    [   0.0000,  10.0000];... %V_dpp
+    [   0.0000,  10.0000];... %V_ddp
+    [ -10.0000,   0.0000];... %V_ddd
     %[   0.0000,  20.0000];... %I_sc_a
     %[   0.0000,  20.0000];... %I_pc_a
     %[   0.0000,  20.0000];... %I_ec_a
@@ -204,10 +203,10 @@ for p = 1:n_profile
     if length(profile(p).dft_band_list) ~= length(profile(p).etb_band_list)
         disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `dft_bands_list` and `etb_band_list` must have the same length."));
         return;
-    elseif length(profile(p).dft_band_list) ~= length(profile(p).bands_weight)
+    elseif length(profile(p).dft_band_list) ~= length(profile(p).bands_bweight)
         disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `bands_weight` and `band_list` must have the same length."));
         return;
-    elseif length(profile(p).dft_band_list) ~= length(profile(p).coef2_weight)
+    elseif length(profile(p).dft_band_list) ~= length(profile(p).coef2_bweight)
         disp(strcat("ERROR IN THE PROFILE ",num2str(p),": `coef2_weight` and `band_list` must have the same length."));
         return;
     elseif length(profile(p).klist) ~= length(profile(p).bands_kweight)
@@ -234,6 +233,7 @@ for p = 1:n_profile
     profile(p).dft_bands = dft_raw(idx, 2); %value of VBE in dft.csv is assumed to be 0 eV
     profile(p).dft_coef2 = dft_raw(idx, 3:end);
 
+    % calculate the weights in terms of k-points
     profile(p).weight.bands = ones(n_k_fit*n_band_fit, 1);
     profile(p).weight.coef2 = ones(n_k_fit*n_band_fit, 1);
     %for k = 1:length(p.crit_k_ind) %if take all kpoints into fitting
@@ -245,36 +245,33 @@ for p = 1:n_profile
         profile(p).weight.coef2(idx, 1) = profile(p).weight.coef2(idx, 1) * profile(p).coef2_kweight(k);
     end
 
-    if weighting_method == 0
-        w_bands = 1;
-        w_coef2 = 1;
-    elseif weighting_method == 1
-        w_bands = [];
-        w_coef2 = [];
-        for band = 1:n_band_fit
-            w_bands = [w_bands; ones(n_k_fit,1)*profile(p).bands_weight(band)];
-            w_coef2 = [w_coef2; ones(n_k_fit,1)*profile(p).coef2_weight(band)];
+    % calculate the weights in terms of energy
+    i_vbe = 0;
+    for b = profile(p).dft_band_list
+        if b <= profile(p).dft_top_vb
+            i_vbe = i_vbe + n_k_fit;
         end
-    elseif weighting_method == 2
-        i_vbe = 0;
-        for b = profile(p).dft_band_list
-            if b <= profile(p).dft_top_vb
-                i_vbe = i_vbe + n_k_fit;
-            end
-        end
-        w_vb = profile(p).gauss(1,1) * normpdf(profile(p).dft_bands(1:i_vbe,1), dft_vbe, profile(p).gauss(2,1));
-        w_cb = profile(p).gauss(1,2) * normpdf(profile(p).dft_bands(i_vbe+1:end,1), dft_cbe, profile(p).gauss(2,2));
-        w_bands = [w_vb; w_cb];
-        w_coef2 = w_bands;
-    else
-        disp("ERROR: `weighting_method` must be 0, 1, or 2.");
-        return;
+    end
+    w_vb = normpdf(profile(p).dft_bands(1:i_vbe,1), dft_vbe, profile(p).gauss(1,1));
+    w_cb = normpdf(profile(p).dft_bands(i_vbe+1:end,1), dft_cbe, profile(p).gauss(1,2));
+    w_bands = [w_vb; w_cb];
+    w_coef2 = w_bands;
+
+    fac_bands = [];
+    fac_coef2 = [];
+    for band = 1:n_band_fit
+        fac_bands = [fac_bands; ones(n_k_fit,1)*profile(p).bands_bweight(band)];
+        fac_coef2 = [fac_coef2; ones(n_k_fit,1)*profile(p).coef2_bweight(band)];
     end
 
+    w_bands = w_bands .* fac_bands;
+    w_coef2 = w_coef2 .* fac_coef2;
+
+    % calculate the net weights
     profile(p).weight.bands = profile(p).weight.bands .* w_bands;
     profile(p).weight.coef2 = profile(p).weight.coef2 .* w_coef2;
-    %profile(p).weight.bands(:,1) = profile(p).weight.bands(:,1) .* profile(p).bands_weight(band);
-    %profile(p).weight.coef2(:,1) = profile(p).weight.coef2(:,1) .* profile(p).coef2_weight(band);
+    %profile(p).weight.bands(:,1) = profile(p).weight.bands(:,1) .* profile(p).bands_bweight(band);
+    %profile(p).weight.coef2(:,1) = profile(p).weight.coef2(:,1) .* profile(p).coef2_bweight(band);
 
     profile(p).weight.bands = profile(p).weight.bands/sum(profile(p).weight.bands, "all");
     profile(p).weight.coef2 = profile(p).weight.coef2/sum(profile(p).weight.coef2, "all");
@@ -421,7 +418,7 @@ function costs = cost_funs(n_profile, profile, para_name, etb_set, bands_bound, 
         for f=1:length(profile(p).etb_data)
             system(strcat("sed",command_str," < ../../../datafiles/sample_",profile(p).etb_data(f),"_stage2.etb > ",temp_mate,"/",profile(p).etb_data(f),".etb")); %run sed to obtain the new temporary .etb file
         end
-        full_klist = readmatrix("../kpoints_full");
+        full_klist = readmatrix("../kpoints");
         klist = full_klist(profile(p).klist,:);
         writematrix(klist,strcat(temp_mate,"/kpoints.csv"), 'Delimiter', ',');
         %run simulation
