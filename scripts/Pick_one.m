@@ -1,8 +1,16 @@
-function Select2(n_profile, index)
+function Pick_one(profile_list, material, stage, series, save, date, index)
+
+    %INPUTS: profile_list: list of profile indices, e.g. [1,2]
+    %        material: name of the material, e.g. "GaN"
+    %        stage: stage number in string, e.g. "2"
+    %        series: series number in string, e.g. "1"
+    %        save: save number in string, e.g. "07"
+    %        date: today in string, e.g. "26Apr2025"
+    %        index: index of the chosen point in the repository in the order of ascending band cost
 
     %cost = importdata('pareto_costs.csv');
     %cost = cost.data;
-    cost = importdata('../archives/Stage2/07Mar2025_1/rep-costs_stage2.csv');
+    cost = importdata(strcat('../archives/',material,'/Stage',stage,'/series',series,'_save',save,'_',date,'/rep-costs_stage2.csv'));
     [sorted_band_cost, i_particle] = sort(cost(:,1));
 
     disp( strcat("BAND COST: ", num2str(sorted_band_cost(index)) ) );
@@ -12,11 +20,17 @@ function Select2(n_profile, index)
     %	return;
     %end
     
-    profile(1).dir = '../profiles/GaN_zb_unstrained_0K_noSOC/';
+    profile(1).dir = '../profiles/GaN_zb_unstrained_300K_noSOC/';
     profile(1).etb_data = ["GaN"];
+
+    profile(2).dir = '../profiles/InN_zb_unstrained_300K_noSOC/';
+    profile(2).etb_data = ["InN"];
+
+    profile(3).dir = '../profiles/AlN_zb_unstrained_300K_noSOC/';
+    profile(3).etb_data = ["AlN"];
     
     %particle = importdata('pareto_points.csv');
-    particle = transpose(importdata('../archives/Stage2/07Mar2025_1/rep-point_stage2.csv'));
+    particle = transpose(importdata(strcat('../archives/',material,'/Stage',stage,'/series',series,'_save',save,'_',date,'/rep-point_stage2.csv')));
     para = particle(:,i_particle(index));
     n_etb_para = length(para);
     %writematrix(para, 'selected0.csv');
@@ -62,7 +76,7 @@ function Select2(n_profile, index)
     end
     
     parent_dir = pwd;
-    for p = 1:n_profile
+    for p = profile_list
         cd(parent_dir);
         cd(profile(p).dir);
         %system("rm -rf ./*/");
@@ -75,7 +89,7 @@ function Select2(n_profile, index)
         %system(strcat('sed -e "s/@outdir@/out_',temp_mate,'/g" -e "s/@mate@/',temp_mate,'/g" < sample.tib > ',temp_mate,'.tib'));
         %system(strcat("cp sample.dat ",temp_mate,"/GaN.dat"));
         system(strcat("cp tb.upg select2/tb.upg"));
-        system(strcat("cp kpoints_full select2/kpoints.csv"));
+        system(strcat("cp kpoints select2/kpoints.csv"));
         system(strcat('sed -e "s|@temp@|',strcat(pwd,"/select2"),'|g" < parameterizer.in > select2/parameterizer.in'));
         %system(strcat("LD_LIBRARY_PATH= /home/alphan/TiberCAD/trunk_playground/bin/tibercad ",temp_mate,".tib")); %run TiberCAD
         %system(strcat("LD_LIBRARY_PATH= TIBERCADROOT=/home/alphan/TiberCAD/trunk_playground/ /home/alphan/TiberCAD/trunk_playground/x86_64-linux/bin/tibercad ",temp_mate,".tib")); %(Daniele: implementing Matthias' suggestion)
