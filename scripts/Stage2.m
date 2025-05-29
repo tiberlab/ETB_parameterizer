@@ -70,6 +70,8 @@ end%
 %OPTIMIZATION-CONTROLLING PARAMETERS
 %-----------------------------------
 %modifiable part
+library_path = "TIBERCADROOT=/home/alphan/TiberCAD/trunk_test/"; %path to the librabry needed for UPTIGHT
+executable = "/home/alphan/TiberCAD/trunk_test/src/core/modules/etb/libuptight/src/lib_uptight/PARAMETERIZER"; %path to the executable PARAMETERIZER in UPTIGHT
 profile_list = [2]; %list of profiles to be used for fitting
 n_objective = 2; %number of fitting objectives: 1 (only bands), or 2 (bands and coef2)
 parallel = true; %run in parallel or not (note: 'SA' does not support parallel mode)
@@ -289,7 +291,7 @@ end
 %---------------------------------------------
 %DEFINE THE OBJECTIVE FUNCTION TO BE OPTIMIZED
 %---------------------------------------------
-object_fun = @(etb_set) cost_funs(profile_list, profile, para_name, etb_set, bands_bound, coef2_bound, n_objective);
+object_fun = @(etb_set) cost_funs(profile_list, profile, para_name, etb_set, bands_bound, coef2_bound, n_objective, library_path, executable);
 
 %-------------------------------------
 %OPTIMIZATION AND WRITE OUT THE RESULT
@@ -320,7 +322,7 @@ disp('ALL FINISH!');
 %USER-DEFINED FUNCTIONS
 %======================
 %---------------------------------
-function costs = cost_funs(profile_list, profile, para_name, etb_set, bands_bound, coef2_bound, n_objective)
+function costs = cost_funs(profile_list, profile, para_name, etb_set, bands_bound, coef2_bound, n_objective, library_path, executable)
     
     % Ensure unique folder name
     %while (isfolder(strcat("../profiles/GaN_zb_unstrained_0K_noSOC/",temp_mate)))
@@ -359,8 +361,9 @@ function costs = cost_funs(profile_list, profile, para_name, etb_set, bands_boun
         system(strcat("cp ../tb.upg ",temp_mate,"/tb.upg"));
         system(strcat('sed -e "s|@temp@|',strcat(pwd,"/",temp_mate),'|g" < ../parameterizer.in > ',temp_mate,'/parameterizer.in'));
         cd(strcat(temp_mate));
-        system(strcat("LD_LIBRARY_PATH= TIBERCADROOT=/home/alphan/TiberCAD/trunk_test/ /home/alphan/TiberCAD/trunk_test/src/core/modules/etb/libuptight/src/lib_uptight/PARAMETERIZER < parameterizer.in"));
-        
+        %system(strcat("LD_LIBRARY_PATH= TIBERCADROOT=/home/alphan/TiberCAD/trunk_test/ /home/alphan/TiberCAD/trunk_test/src/core/modules/etb/libuptight/src/lib_uptight/PARAMETERIZER < parameterizer.in"));
+        system(strcat("LD_LIBRARY_PATH= ",library_path," ",executable, " < parameterizer.in")); %run the PARAMETERIZER executable with the input file
+
         %import result and remove the temporary files and folder
         if (isfile('etb.csv'))
             etb = importdata('etb.csv');
